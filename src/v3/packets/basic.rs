@@ -1,9 +1,9 @@
+mod command;
 mod notification;
-mod transport_info;
 mod request;
 mod response;
 mod transfer_data;
-mod command;
+mod transport_info;
 
 pub use notification::*;
 pub use request::*;

@@ -6,12 +6,12 @@ pub enum Response {
 }
 
 impl Response {
-    pub fn command_id(&self) -> u8 {
+    pub fn command(&self) -> u8 {
         match self {
             Response::Unknown { command, .. } => *command,
         }
     }
-    pub fn parse(command: u8, data: impl std::io::Read) -> std::io::Result<Self> {
+    pub fn read(command: u8, data: impl std::io::Read) -> std::io::Result<Self> {
         Ok(Response::Unknown {
             command,
             data: data.read_tail()?,

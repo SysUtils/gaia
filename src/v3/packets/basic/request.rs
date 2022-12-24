@@ -1,18 +1,9 @@
-use num_enum::TryFromPrimitive;
-
 use crate::{traits::Payload, v3::feature::QTILFeature};
 
-use super::protocol_info::{TransportInfo, TransportInfoType};
-
-#[repr(u8)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, TryFromPrimitive)]
-pub enum CommandCode {
-    FetchFeatures = 0x01,
-    RegisterNotification = 0x07,
-    InitTransferData = 0x0A,
-    GetTransportInfo = 0x0C,
-    SetTransportParameter = 0x0D,
-}
+use super::{
+    command::Command,
+    transport_info::{TransportInfo, TransportInfoType},
+};
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub enum Request {
@@ -23,17 +14,13 @@ pub enum Request {
 }
 
 impl Request {
-    pub fn code(&self) -> CommandCode {
+    pub fn command(&self) -> Command {
         match self {
-            Request::FetchFeatures() => CommandCode::FetchFeatures,
-            Request::RegisterNotification(_) => CommandCode::RegisterNotification,
-            Request::GetTransportInfo(_) => CommandCode::GetTransportInfo,
-            Request::SetTransportParameter(_) => CommandCode::SetTransportParameter,
+            Request::FetchFeatures() => Command::FetchFeatures,
+            Request::RegisterNotification(_) => Command::RegisterNotification,
+            Request::GetTransportInfo(_) => Command::GetTransportInfo,
+            Request::SetTransportParameter(_) => Command::SetTransportParameter,
         }
-    }
-
-    pub fn command_id(&self) -> u8 {
-        self.code() as _
     }
 }
 

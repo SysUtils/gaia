@@ -26,11 +26,11 @@ pub struct Error {
 }
 
 impl Error {
-    pub fn full_command_id(&self) -> u16 {
+    pub fn packet_id(&self) -> u16 {
         (self.feature as u16) << 8 | self.command as u16
     }
 
-    pub fn parse(feature: u8, cmd: u8, mut data: impl std::io::Read) -> std::io::Result<Self> {
+    pub fn read(feature: u8, cmd: u8, mut data: impl std::io::Read) -> std::io::Result<Self> {
         Ok(Self {
             feature,
             command: cmd,

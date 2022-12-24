@@ -1,5 +1,6 @@
 mod anc;
-mod cardle_status;
+mod charging_status;
+pub mod command;
 mod fw_version;
 mod notification;
 mod peer_state;

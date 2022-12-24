@@ -10,6 +10,14 @@ use super::{
 };
 
 #[derive(Debug, Clone)]
+pub enum PacketKind {
+    Request,
+    Response,
+    Event,
+    Unknown,
+}
+
+#[derive(Debug, Clone)]
 pub enum Packet {
     V1(V1Packet),
     V3(V3Packet),
@@ -17,27 +25,19 @@ pub enum Packet {
 }
 
 impl Packet {
-    pub fn is_response(&self) -> bool {
+    pub fn kind(&self) -> PacketKind {
         match self {
-            Packet::V1(data) => data.is_response(),
-            Packet::Unknown { .. } => false,
-            Packet::V3(data) => data.is_response(),
+            Packet::V1(data) => data.kind(),
+            Packet::V3(data) => data.kind(),
+            Packet::Unknown { .. } => PacketKind::Unknown,
         }
     }
 
-    pub fn is_event(&self) -> bool {
+    pub fn packet_id(&self) -> (u16, u16) {
         match self {
-            Packet::V1(data) => data.is_event(),
-            Packet::Unknown { .. } => false,
-            Packet::V3(data) => data.is_event(),
-        }
-    }
-
-    pub fn command_id(&self) -> (u16, u16) {
-        match self {
-            Packet::V1(data) => (V1V2_VENDOR_ID, data.command_id()),
+            Packet::V1(data) => (V1V2_VENDOR_ID, data.packet_id()),
             Packet::Unknown { vendor_id, .. } => (*vendor_id, 0),
-            Packet::V3(data) => (V3_VENDOR_ID, data.command_id()),
+            Packet::V3(data) => (V3_VENDOR_ID, data.packet_id()),
         }
     }
 }

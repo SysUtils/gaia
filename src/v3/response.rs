@@ -14,11 +14,11 @@ pub enum Response {
 }
 
 impl Response {
-    pub fn command_id(&self) -> u16 {
+    pub fn packet_id(&self) -> u16 {
         match self {
-            Self::Anc(p) => (QTILFeature::Anc as u16) << 8 | p.command_id() as u16,
-            Self::Basic(p) => (QTILFeature::Basic as u16) << 8 | p.command_id() as u16,
-            Self::Earbud(p) => (QTILFeature::Earbud as u16) << 8 | p.command_id() as u16,
+            Self::Anc(p) => (QTILFeature::Anc as u16) << 8 | p.command() as u16,
+            Self::Basic(p) => (QTILFeature::Basic as u16) << 8 | p.command() as u16,
+            Self::Earbud(p) => (QTILFeature::Earbud as u16) << 8 | p.command() as u16,
             Self::Unknown { feature, .. } => (*feature as u16) << 8,
         }
     }
@@ -35,9 +35,9 @@ impl Response {
         };
 
         Ok(match feature {
-            QTILFeature::Anc => Self::Anc(anc::Response::parse(command, data)?),
-            QTILFeature::Basic => Self::Basic(basic::Response::parse(command, data)?),
-            QTILFeature::Earbud => Self::Earbud(earbud::Response::parse(command, data)?),
+            QTILFeature::Anc => Self::Anc(anc::Response::read(command, data)?),
+            QTILFeature::Basic => Self::Basic(basic::Response::read(command, data)?),
+            QTILFeature::Earbud => Self::Earbud(earbud::Response::read(command, data)?),
         })
     }
 }

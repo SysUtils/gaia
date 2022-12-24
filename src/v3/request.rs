@@ -24,22 +24,22 @@ impl Request {
         }
     }
 
-    pub fn full_command_id(&self) -> u16 {
+    pub fn packet_id(&self) -> u16 {
         match self {
-            Request::Anc(p) => (QTILFeature::Anc as u16) << 8 | p.command_id() as u16,
-            Request::Basic(p) => (QTILFeature::Basic as u16) << 8 | p.command_id() as u16,
-            Request::Earbud(p) => (QTILFeature::Earbud as u16) << 8 | p.command_id() as u16,
+            Request::Anc(p) => (QTILFeature::Anc as u16) << 8 | p.command() as u16,
+            Request::Basic(p) => (QTILFeature::Basic as u16) << 8 | p.command() as u16,
+            Request::Earbud(p) => (QTILFeature::Earbud as u16) << 8 | p.command() as u16,
             Request::Unknown {
                 feature, command, ..
             } => (*feature as u16) << 8 | *command as u16,
         }
     }
 
-    pub fn command_id(&self) -> u8 {
+    pub fn command(&self) -> u8 {
         match self {
-            Request::Anc(p) => p.command_id(),
-            Request::Basic(p) => p.command_id(),
-            Request::Earbud(p) => p.command_id(),
+            Request::Anc(p) => p.command(),
+            Request::Basic(p) => p.command() as _,
+            Request::Earbud(p) => p.command() as _,
             Request::Unknown { command, .. } => *command,
         }
     }
@@ -53,7 +53,7 @@ impl Request {
         }
     }
 
-    pub fn parse(feature: u8, command: u8, data: impl std::io::Read) -> std::io::Result<Self> {
+    pub fn read(feature: u8, command: u8, data: impl std::io::Read) -> std::io::Result<Self> {
         let feature = match QTILFeature::try_from(feature) {
             Ok(feature) => feature,
             Err(_) => {

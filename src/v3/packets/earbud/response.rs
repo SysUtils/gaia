@@ -5,12 +5,12 @@ use byteorder::ReadBytesExt;
 use crate::byte_utils::ReadTail;
 
 use super::{
-    cardle_status::ChargeStatus, fw_version::FwVersion, peer_state::PeerState, request::CommandCode,
+    charging_status::ChargingStatus, command::Command, fw_version::FwVersion, peer_state::PeerState,
 };
 
 #[derive(Debug, Clone)]
 pub enum Response {
-    GetChargingState(ChargeStatus),
+    GetChargingState(ChargingStatus),
     GetEq(u8),
     GetCustomEq(Vec<u8>),
     GetAncAmbientSoundMode(Vec<u8>),
@@ -57,39 +57,39 @@ pub enum Response {
 }
 
 impl Response {
-    pub fn parse(command: u8, mut data: impl std::io::Read) -> std::io::Result<Self> {
-        let cmd = match CommandCode::try_from(command) {
+    pub fn read(command: u8, mut data: impl std::io::Read) -> std::io::Result<Self> {
+        let cmd = match Command::try_from(command) {
             Ok(cmd) => cmd,
             _ => return Ok(Self::Unknown(command, data.read_tail()?)),
         };
 
         Ok(match cmd {
-            CommandCode::GetEq => Self::GetEq(data.read_u8()?),
-            CommandCode::GetCustomEq => Self::GetCustomEq(data.read_tail()?),
-            CommandCode::GetAncAmbientSoundMode => Self::GetAncAmbientSoundMode(data.read_tail()?),
-            CommandCode::GetAptState => Self::GetAptState(data.read_tail()?),
-            CommandCode::GetGameMode => Self::GetGameMode(data.read_u8()? != 0),
-            CommandCode::GetAutoPlay => Self::GetAutoPlay(data.read_u8()? != 0),
-            CommandCode::GetSerialNumber => {
+            Command::GetEq => Self::GetEq(data.read_u8()?),
+            Command::GetCustomEq => Self::GetCustomEq(data.read_tail()?),
+            Command::GetAncAmbientSoundMode => Self::GetAncAmbientSoundMode(data.read_tail()?),
+            Command::GetAptState => Self::GetAptState(data.read_tail()?),
+            Command::GetGameMode => Self::GetGameMode(data.read_u8()? != 0),
+            Command::GetAutoPlay => Self::GetAutoPlay(data.read_u8()? != 0),
+            Command::GetSerialNumber => {
                 Self::GetSerialNumber(String::from_utf8_lossy(&data.read_tail()?).into_owned())
             }
-            CommandCode::GetTouchpadSettingLeft => Self::GetTouchpadSettingLeft(
+            Command::GetTouchpadSettingLeft => Self::GetTouchpadSettingLeft(
                 data.read_tail()?
                     .chunks_exact(2)
                     .map(|f| (f[0], f[1]))
                     .collect(),
             ),
-            CommandCode::GetTouchpadSettingRight => Self::GetTouchpadSettingLeft(
+            Command::GetTouchpadSettingRight => Self::GetTouchpadSettingLeft(
                 data.read_tail()?
                     .chunks_exact(2)
                     .map(|f| (f[0], f[1]))
                     .collect(),
             ),
-            CommandCode::SetVoiceNotification => Self::SetVoiceNotification,
-            CommandCode::SetAutoPlay => Self::SetAutoPlay,
-            CommandCode::GetWhisperMode => Self::GetWhisperMode(data.read_u8()? != 0),
-            CommandCode::GetTouchpadLockState => Self::GetTouchpadLockState(data.read_u8()? != 0),
-            CommandCode::GetFwVersion => {
+            Command::SetVoiceNotification => Self::SetVoiceNotification,
+            Command::SetAutoPlay => Self::SetAutoPlay,
+            Command::GetWhisperMode => Self::GetWhisperMode(data.read_u8()? != 0),
+            Command::GetTouchpadLockState => Self::GetTouchpadLockState(data.read_u8()? != 0),
+            Command::GetFwVersion => {
                 let data = data.read_tail()?;
                 Self::GetFwVersion((
                     [
@@ -99,87 +99,87 @@ impl Response {
                     data[12..14].try_into().unwrap(),
                 ))
             }
-            CommandCode::GetPeerState => Self::GetPeerState(PeerState::parse(data)?),
-            CommandCode::SetWhisperMode => Self::SetWhisperMode,
-            CommandCode::SetAncAutoAmbientSoundMode => Self::SetAncAutoAmbientMode,
-            CommandCode::GetAncControlMode => Self::GetAncControlMode(data.read_u8()? != 0),
-            CommandCode::GetDolbyEq => Self::GetDolbyEq(data.read_u8()?),
-            CommandCode::GetUniverse => Self::GetUniverse(data.read_u8()?),
-            CommandCode::GetPDL => Self::GetPDL,
-            CommandCode::GetAlwaysUvnanoMode => Self::GetAlwaysUvnanoMode(data.read_u8()? != 0),
-            CommandCode::GetInEarState => {
+            Command::GetPeerState => Self::GetPeerState(PeerState::read(data)?),
+            Command::SetWhisperMode => Self::SetWhisperMode,
+            Command::SetAncAutoAmbientSoundMode => Self::SetAncAutoAmbientMode,
+            Command::GetAncControlMode => Self::GetAncControlMode(data.read_u8()? != 0),
+            Command::GetDolbyEq => Self::GetDolbyEq(data.read_u8()?),
+            Command::GetUniverse => Self::GetUniverse(data.read_u8()?),
+            Command::GetPDL => Self::GetPDL,
+            Command::GetAlwaysUvnanoMode => Self::GetAlwaysUvnanoMode(data.read_u8()? != 0),
+            Command::GetInEarState => {
                 Self::GetInEarState(((data.read_u8()? != 0), (data.read_u8()? != 0)))
             }
-            CommandCode::GetAptxAdMode => Self::GetAptxAdMode(data.read_u8()?),
-            CommandCode::GetA2DPBarge => Self::GetA2DPBarge(data.read_u8()?),
-            CommandCode::GetRegionEq => Self::GetRegionEq(data.read_tail()?),
-            CommandCode::SetEq => Self::SetEq,
-            CommandCode::SetCustomEq => Self::SetCustomEq,
-            CommandCode::SetAncAmbientSoundMode => Self::SetAncAmbientSoundMode,
-            CommandCode::SetAptxState => Self::SetAptxState,
-            CommandCode::SetGameMode => Self::SetGameMode,
-            CommandCode::SetTouchpadSettingLeft => Self::SetTouchpadSettingLeft,
-            CommandCode::SetTouchpadSettingRight => Self::SetTouchpadSettingRight,
-            CommandCode::SetFindDevice => Self::SetFindDevice,
-            CommandCode::SetToggleTouchPad => Self::SetToggleTouchPad,
-            CommandCode::SetAncAutoAmbientMode => Self::SetAncAutoAmbientMode,
-            CommandCode::SetAncControlMode => Self::SetAncControlMode,
-            CommandCode::SetDolbyEq => Self::SetDolbyEq,
-            CommandCode::SetUniverse => Self::SetUniverse,
-            CommandCode::SetAlwaysUvnanoMode => Self::SetAlwaysUvnanoMode,
-            CommandCode::SetAptAdMode => Self::SetAptAdMode,
-            CommandCode::SetA2DPBarge => Self::SetA2DPBarge,
-            CommandCode::SetRegionEq => Self::SetRegionEq,
-            CommandCode::SetRegionEq2 => Self::SetRegionEq2,
-            CommandCode::GetChargingState => Self::GetChargingState(ChargeStatus::parse(data)?),
+            Command::GetAptxAdMode => Self::GetAptxAdMode(data.read_u8()?),
+            Command::GetA2DPBarge => Self::GetA2DPBarge(data.read_u8()?),
+            Command::GetRegionEq => Self::GetRegionEq(data.read_tail()?),
+            Command::SetEq => Self::SetEq,
+            Command::SetCustomEq => Self::SetCustomEq,
+            Command::SetAncAmbientSoundMode => Self::SetAncAmbientSoundMode,
+            Command::SetAptxState => Self::SetAptxState,
+            Command::SetGameMode => Self::SetGameMode,
+            Command::SetTouchpadSettingLeft => Self::SetTouchpadSettingLeft,
+            Command::SetTouchpadSettingRight => Self::SetTouchpadSettingRight,
+            Command::SetFindDevice => Self::SetFindDevice,
+            Command::SetToggleTouchPad => Self::SetToggleTouchPad,
+            Command::SetAncAutoAmbientMode => Self::SetAncAutoAmbientMode,
+            Command::SetAncControlMode => Self::SetAncControlMode,
+            Command::SetDolbyEq => Self::SetDolbyEq,
+            Command::SetUniverse => Self::SetUniverse,
+            Command::SetAlwaysUvnanoMode => Self::SetAlwaysUvnanoMode,
+            Command::SetAptAdMode => Self::SetAptAdMode,
+            Command::SetA2DPBarge => Self::SetA2DPBarge,
+            Command::SetRegionEq => Self::SetRegionEq,
+            Command::SetRegionEq2 => Self::SetRegionEq2,
+            Command::GetChargingState => Self::GetChargingState(ChargingStatus::read(data)?),
         })
     }
 
-    pub fn command_id(&self) -> u8 {
+    pub fn command(&self) -> u8 {
         match self {
-            Response::GetChargingState(_) => CommandCode::GetChargingState as _,
-            Response::GetEq(_) => CommandCode::GetEq as _,
-            Response::GetCustomEq(_) => CommandCode::GetCustomEq as _,
-            Response::GetAncAmbientSoundMode(_) => CommandCode::GetAncAmbientSoundMode as _,
-            Response::GetAptState(_) => CommandCode::GetAptState as _,
-            Response::GetGameMode(_) => CommandCode::GetGameMode as _,
-            Response::GetAutoPlay(_) => CommandCode::GetAutoPlay as _,
-            Response::GetSerialNumber(_) => CommandCode::GetSerialNumber as _,
-            Response::GetTouchpadSettingLeft(_) => CommandCode::GetTouchpadSettingLeft as _,
-            Response::SetVoiceNotification => CommandCode::SetVoiceNotification as _,
-            Response::SetAutoPlay => CommandCode::SetAutoPlay as _,
-            Response::GetWhisperMode(_) => CommandCode::GetWhisperMode as _,
-            Response::GetTouchpadLockState(_) => CommandCode::GetTouchpadLockState as _,
-            Response::GetFwVersion(_) => CommandCode::GetFwVersion as _,
-            Response::GetPeerState(_) => CommandCode::GetPeerState as _,
-            Response::SetWhisperMode => CommandCode::GetWhisperMode as _,
-            Response::SetAncAutoAmbientMode => CommandCode::GetWhisperMode as _,
-            Response::GetAncControlMode(_) => CommandCode::GetAncControlMode as _,
-            Response::GetDolbyEq(_) => CommandCode::GetDolbyEq as _,
-            Response::GetUniverse(_) => CommandCode::GetUniverse as _,
-            Response::GetPDL => CommandCode::GetPDL as _,
-            Response::GetAlwaysUvnanoMode(_) => CommandCode::GetAlwaysUvnanoMode as _,
-            Response::GetInEarState(_) => CommandCode::GetInEarState as _,
-            Response::GetAptxAdMode(_) => CommandCode::GetAptxAdMode as _,
-            Response::GetA2DPBarge(_) => CommandCode::GetA2DPBarge as _,
-            Response::GetRegionEq(_) => CommandCode::GetRegionEq as _,
-            Response::SetEq => CommandCode::SetEq as _,
-            Response::SetCustomEq => CommandCode::SetCustomEq as _,
-            Response::SetAncAmbientSoundMode => CommandCode::SetAncAmbientSoundMode as _,
-            Response::SetAptxState => CommandCode::SetAptxState as _,
-            Response::SetGameMode => CommandCode::SetGameMode as _,
-            Response::SetTouchpadSettingLeft => CommandCode::SetTouchpadSettingLeft as _,
-            Response::SetTouchpadSettingRight => CommandCode::SetTouchpadSettingRight as _,
-            Response::SetFindDevice => CommandCode::SetFindDevice as _,
-            Response::SetToggleTouchPad => CommandCode::SetToggleTouchPad as _,
-            Response::SetAncControlMode => CommandCode::SetAncControlMode as _,
-            Response::SetDolbyEq => CommandCode::SetDolbyEq as _,
-            Response::SetUniverse => CommandCode::SetUniverse as _,
-            Response::SetAlwaysUvnanoMode => CommandCode::SetAlwaysUvnanoMode as _,
-            Response::SetAptAdMode => CommandCode::SetAptAdMode as _,
-            Response::SetA2DPBarge => CommandCode::SetA2DPBarge as _,
-            Response::SetRegionEq => CommandCode::SetRegionEq as _,
-            Response::SetRegionEq2 => CommandCode::SetRegionEq2 as _,
+            Response::GetChargingState(_) => Command::GetChargingState as _,
+            Response::GetEq(_) => Command::GetEq as _,
+            Response::GetCustomEq(_) => Command::GetCustomEq as _,
+            Response::GetAncAmbientSoundMode(_) => Command::GetAncAmbientSoundMode as _,
+            Response::GetAptState(_) => Command::GetAptState as _,
+            Response::GetGameMode(_) => Command::GetGameMode as _,
+            Response::GetAutoPlay(_) => Command::GetAutoPlay as _,
+            Response::GetSerialNumber(_) => Command::GetSerialNumber as _,
+            Response::GetTouchpadSettingLeft(_) => Command::GetTouchpadSettingLeft as _,
+            Response::SetVoiceNotification => Command::SetVoiceNotification as _,
+            Response::SetAutoPlay => Command::SetAutoPlay as _,
+            Response::GetWhisperMode(_) => Command::GetWhisperMode as _,
+            Response::GetTouchpadLockState(_) => Command::GetTouchpadLockState as _,
+            Response::GetFwVersion(_) => Command::GetFwVersion as _,
+            Response::GetPeerState(_) => Command::GetPeerState as _,
+            Response::SetWhisperMode => Command::GetWhisperMode as _,
+            Response::SetAncAutoAmbientMode => Command::GetWhisperMode as _,
+            Response::GetAncControlMode(_) => Command::GetAncControlMode as _,
+            Response::GetDolbyEq(_) => Command::GetDolbyEq as _,
+            Response::GetUniverse(_) => Command::GetUniverse as _,
+            Response::GetPDL => Command::GetPDL as _,
+            Response::GetAlwaysUvnanoMode(_) => Command::GetAlwaysUvnanoMode as _,
+            Response::GetInEarState(_) => Command::GetInEarState as _,
+            Response::GetAptxAdMode(_) => Command::GetAptxAdMode as _,
+            Response::GetA2DPBarge(_) => Command::GetA2DPBarge as _,
+            Response::GetRegionEq(_) => Command::GetRegionEq as _,
+            Response::SetEq => Command::SetEq as _,
+            Response::SetCustomEq => Command::SetCustomEq as _,
+            Response::SetAncAmbientSoundMode => Command::SetAncAmbientSoundMode as _,
+            Response::SetAptxState => Command::SetAptxState as _,
+            Response::SetGameMode => Command::SetGameMode as _,
+            Response::SetTouchpadSettingLeft => Command::SetTouchpadSettingLeft as _,
+            Response::SetTouchpadSettingRight => Command::SetTouchpadSettingRight as _,
+            Response::SetFindDevice => Command::SetFindDevice as _,
+            Response::SetToggleTouchPad => Command::SetToggleTouchPad as _,
+            Response::SetAncControlMode => Command::SetAncControlMode as _,
+            Response::SetDolbyEq => Command::SetDolbyEq as _,
+            Response::SetUniverse => Command::SetUniverse as _,
+            Response::SetAlwaysUvnanoMode => Command::SetAlwaysUvnanoMode as _,
+            Response::SetAptAdMode => Command::SetAptAdMode as _,
+            Response::SetA2DPBarge => Command::SetA2DPBarge as _,
+            Response::SetRegionEq => Command::SetRegionEq as _,
+            Response::SetRegionEq2 => Command::SetRegionEq2 as _,
             Response::Unknown(code, _) => *code as _,
         }
     }

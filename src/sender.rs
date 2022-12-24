@@ -3,7 +3,7 @@ use std::{collections::VecDeque, sync::Arc};
 use dashmap::DashMap;
 use tokio::sync::{broadcast, oneshot};
 
-use crate::packet::Packet;
+use crate::packet::{Packet, PacketKind};
 
 use super::traits::{Payload, Transport};
 
@@ -32,22 +32,30 @@ impl<T: Transport + 'static> Sender<T> {
                         continue;
                     }
                 };
-                if packet.is_response() {
-                    let tx = r1
-                        .get_mut(&packet.command_id())
-                        .and_then(|mut r| r.pop_front());
-                    let tx = match tx {
-                        Some(tx) => tx,
-                        None => {
-                            tracing::error!("Received packet without request, skip");
-                            return;
-                        }
-                    };
-                    let _ = tx.send(packet);
-                } else if packet.is_event() {
-                    let _ = event_bus.send(packet);
-                } else {
-                    tracing::error!("Unknown packet received: {:?}", packet)
+
+                match packet.kind() {
+                    PacketKind::Request => {
+                        tracing::error!("Received request, idk how to handle it");
+                    }
+                    PacketKind::Response => {
+                        let tx = r1
+                            .get_mut(&packet.packet_id())
+                            .and_then(|mut r| r.pop_front());
+                        let tx = match tx {
+                            Some(tx) => tx,
+                            None => {
+                                tracing::error!("Received packet without request, skip");
+                                return;
+                            }
+                        };
+                        let _ = tx.send(packet);
+                    }
+                    PacketKind::Event => {
+                        let _ = event_bus.send(packet);
+                    }
+                    PacketKind::Unknown => {
+                        tracing::error!("Unknown packet received: {:?}", packet)
+                    }
                 }
             }
         });
@@ -63,7 +71,7 @@ impl<T: Transport + 'static> Sender<T> {
     }
 
     pub async fn send(&self, data: Packet) -> Packet {
-        let id = data.command_id();
+        let id = data.packet_id();
         let (tx, rx) = oneshot::channel();
         self.requests.entry(id).or_default().push_back(tx);
         self.transport.send(data).await;

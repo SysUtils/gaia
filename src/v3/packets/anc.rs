@@ -1,6 +1,5 @@
 mod earbud_position;
 mod notification;
-mod packet;
 mod request;
 mod response;
 

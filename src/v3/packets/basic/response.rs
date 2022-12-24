@@ -5,7 +5,7 @@ use crate::{
     {traits::Payload, v3::feature::QTILFeature},
 };
 
-use super::{protocol_info::TransportInfo, request::CommandCode};
+use super::{command::Command, transport_info::TransportInfo};
 
 #[derive(Debug, Clone)]
 pub enum Response {
@@ -17,33 +17,23 @@ pub enum Response {
 }
 
 impl Response {
-    pub fn code(&self) -> Option<CommandCode> {
+    pub fn command(&self) -> u8 {
         match self {
-            Response::FetchFeatures(_) => Some(CommandCode::FetchFeatures),
-            Response::GetTransportInfo(_) => Some(CommandCode::GetTransportInfo),
-            Response::RegisterNotification => Some(CommandCode::RegisterNotification),
-            Response::Unknown(_, _) => None,
-            Response::SetTransportParameter(_) => Some(CommandCode::SetTransportParameter),
-        }
-    }
-
-    pub fn command_id(&self) -> u8 {
-        match self {
-            Response::FetchFeatures(_) => CommandCode::FetchFeatures as _,
-            Response::GetTransportInfo(_) => CommandCode::GetTransportInfo as _,
-            Response::RegisterNotification => CommandCode::RegisterNotification as _,
+            Response::FetchFeatures(_) => Command::FetchFeatures as _,
+            Response::GetTransportInfo(_) => Command::GetTransportInfo as _,
+            Response::RegisterNotification => Command::RegisterNotification as _,
             Response::Unknown(command_id, _) => *command_id,
-            Response::SetTransportParameter(_) => CommandCode::SetTransportParameter as _,
+            Response::SetTransportParameter(_) => Command::SetTransportParameter as _,
         }
     }
 
-    pub fn parse(command: u8, data: impl std::io::Read) -> std::io::Result<Self> {
-        let cmd = match CommandCode::try_from(command) {
+    pub fn read(command: u8, data: impl std::io::Read) -> std::io::Result<Self> {
+        let cmd = match Command::try_from(command) {
             Ok(o) => o,
             Err(cmd) => return Ok(Self::Unknown(cmd.number, data.read_tail()?)),
         };
         Ok(match cmd {
-            CommandCode::FetchFeatures => {
+            Command::FetchFeatures => {
                 let d = data.read_tail()?;
                 let features = d[1..]
                     .chunks_exact(2)
@@ -57,12 +47,12 @@ impl Response {
                     .collect::<HashMap<_, _>>();
                 Self::FetchFeatures(features)
             }
-            CommandCode::GetTransportInfo => Self::GetTransportInfo(TransportInfo::read(data)?),
-            CommandCode::SetTransportParameter => {
+            Command::GetTransportInfo => Self::GetTransportInfo(TransportInfo::read(data)?),
+            Command::SetTransportParameter => {
                 Self::SetTransportParameter(TransportInfo::read(data)?)
             }
-            CommandCode::RegisterNotification => Self::RegisterNotification,
-            CommandCode::InitTransferData => todo!(),
+            Command::RegisterNotification => Self::RegisterNotification,
+            Command::InitTransferData => todo!(),
         })
     }
 }

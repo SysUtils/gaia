@@ -1,13 +1,11 @@
-use num_enum::FromPrimitive;
+use num_enum::TryFromPrimitive;
 
-use super::{anc::AncStatus, cardle_status::ChargeStatus, peer_state::PeerState};
+use super::{anc::AncStatus, charging_status::ChargingStatus, peer_state::PeerState};
 
-#[derive(Debug, Clone, Copy, FromPrimitive)]
+#[derive(Debug, Clone, Copy, TryFromPrimitive)]
 #[repr(u8)]
 pub enum NotificationType {
     Ancs = 0x01,
-    #[default]
-    Smthg = 0x00,
     PeerState = 0x02,
     ChargeStatus = 0x03,
     Message = 0x04,
@@ -15,22 +13,18 @@ pub enum NotificationType {
     SystemPDL = 0x07,
 }
 
-#[derive(Debug, Clone, Copy)]
-pub struct Smth {}
-
 #[derive(Debug, Clone)]
 pub enum Notification {
     Ancs(AncStatus),
-    ChargeStatus(ChargeStatus),
+    ChargeStatus(ChargingStatus),
     PeerState(PeerState),
-    Smth(Smth),
     Message(String),
     Control(),
     UniverseConnected,
 }
 
 impl Notification {
-    pub fn parse(command: u8, mut data: impl std::io::Read) -> std::io::Result<Self> {
+    pub fn read(command: u8, mut data: impl std::io::Read) -> std::io::Result<Self> {
         let cmd = command.try_into().map_err(|e| {
             std::io::Error::new(
                 std::io::ErrorKind::InvalidData,
@@ -39,11 +33,10 @@ impl Notification {
         })?;
 
         Ok(match cmd {
-            NotificationType::Ancs => Notification::Ancs(AncStatus::parse(data)?),
-            NotificationType::PeerState => Notification::PeerState(PeerState::parse(data)?),
-            NotificationType::Smthg => todo!(),
+            NotificationType::Ancs => Notification::Ancs(AncStatus::read(data)?),
+            NotificationType::PeerState => Notification::PeerState(PeerState::read(data)?),
             NotificationType::ChargeStatus => {
-                Notification::ChargeStatus(ChargeStatus::parse(data)?)
+                Notification::ChargeStatus(ChargingStatus::read(data)?)
             }
             NotificationType::Message => {
                 let mut buf = String::new();

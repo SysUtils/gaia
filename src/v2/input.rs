@@ -1,6 +1,6 @@
 use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
 
-use crate::traits::Payload;
+use crate::{packet::PacketKind, traits::Payload};
 
 use super::{request::V1Request, response::V1Response};
 
@@ -13,21 +13,17 @@ pub enum V1Packet {
 }
 
 impl V1Packet {
-    pub fn is_event(&self) -> bool {
-        matches!(self, V1Packet::Response(V1Response::Event { .. }))
-    }
-
-    pub fn is_response(&self) -> bool {
+    pub fn kind(&self) -> PacketKind {
         match self {
-            V1Packet::Request(_) => false,
-            V1Packet::Response(_) => true,
+            Self::Request(_) => PacketKind::Request,
+            Self::Response(_) => PacketKind::Response,
         }
     }
 
-    pub fn command_id(&self) -> u16 {
+    pub fn packet_id(&self) -> u16 {
         match self {
-            V1Packet::Request(req) => req.code(),
-            V1Packet::Response(resp) => resp.code(),
+            V1Packet::Request(req) => req.command(),
+            V1Packet::Response(resp) => resp.command(),
         }
     }
 }
@@ -39,20 +35,20 @@ impl Payload for V1Packet {
         let cmd = cmd & !RESPONSE_FLAG;
 
         Ok(if is_response {
-            Self::Response(V1Response::parse(cmd, data)?)
+            Self::Response(V1Response::read(cmd, data)?)
         } else {
-            Self::Request(V1Request::parse(cmd, data)?)
+            Self::Request(V1Request::read(cmd, data)?)
         })
     }
 
     fn write(&self, mut buf: impl std::io::Write) -> std::io::Result<()> {
         match self {
             V1Packet::Request(req) => {
-                buf.write_u16::<BigEndian>(req.code())?;
+                buf.write_u16::<BigEndian>(req.command())?;
                 req.write(buf)?;
             }
             V1Packet::Response(resp) => {
-                buf.write_u16::<BigEndian>(resp.code() & RESPONSE_FLAG)?;
+                buf.write_u16::<BigEndian>(resp.command() & RESPONSE_FLAG)?;
                 resp.write(buf)?;
             }
         }

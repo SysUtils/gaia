@@ -1,9 +1,9 @@
-mod fetch_features;
 mod notification;
-mod protocol_info;
+mod transport_info;
 mod request;
 mod response;
 mod transfer_data;
+mod command;
 
 pub use notification::*;
 pub use request::*;

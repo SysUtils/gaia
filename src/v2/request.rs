@@ -9,24 +9,14 @@ pub enum V1Request {
 }
 
 impl V1Request {
-    pub fn code(&self) -> u16 {
+    pub fn command(&self) -> u16 {
         match self {
             Self::FetchVersion => Command::FetchVersion as _,
             Self::Unknown { command, .. } => *command,
         }
     }
 
-    pub fn write(&self, mut buf: impl std::io::Write) -> std::io::Result<()> {
-        match self {
-            Self::FetchVersion => {}
-            Self::Unknown { data, .. } => {
-                buf.write_all(data.as_slice())?;
-            }
-        }
-        Ok(())
-    }
-
-    pub fn parse(command: u16, data: impl std::io::Read) -> std::io::Result<Self> {
+    pub fn read(command: u16, data: impl std::io::Read) -> std::io::Result<Self> {
         let cmd = match Command::try_from(command) {
             Ok(cmd) => cmd,
             Err(_) => {
@@ -43,5 +33,15 @@ impl V1Request {
                 data: data.read_tail()?,
             },
         })
+    }
+
+    pub fn write(&self, mut buf: impl std::io::Write) -> std::io::Result<()> {
+        match self {
+            Self::FetchVersion => {}
+            Self::Unknown { data, .. } => {
+                buf.write_all(data.as_slice())?;
+            }
+        }
+        Ok(())
     }
 }

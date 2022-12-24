@@ -23,7 +23,7 @@ pub enum Notification {
 }
 
 impl Notification {
-    pub fn parse(command: u8, mut data: impl std::io::Read) -> std::io::Result<Self> {
+    pub fn read(command: u8, mut data: impl std::io::Read) -> std::io::Result<Self> {
         let cmd = command.try_into().map_err(|e| {
             std::io::Error::new(
                 std::io::ErrorKind::InvalidData,

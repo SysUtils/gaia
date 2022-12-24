@@ -18,7 +18,7 @@ pub enum V1Response {
 }
 
 impl V1Response {
-    pub fn code(&self) -> u16 {
+    pub fn command(&self) -> u16 {
         match self {
             Self::Event { .. } => Command::Event as _,
             Self::FetchVersion { .. } => Command::FetchVersion as _,
@@ -30,7 +30,7 @@ impl V1Response {
         }
     }
 
-    pub fn parse(command: u16, mut data: impl std::io::Read) -> std::io::Result<Self> {
+    pub fn read(command: u16, mut data: impl std::io::Read) -> std::io::Result<Self> {
         let cmd = match Command::try_from(command) {
             Ok(cmd) => cmd,
             Err(_) => {

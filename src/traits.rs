@@ -1,7 +1,5 @@
 use async_trait::async_trait;
 
-pub enum PacketError {}
-
 pub trait Payload: Sized + Send + Sync {
     fn read(data: impl std::io::Read) -> std::io::Result<Self>;
     fn write(&self, buf: impl std::io::Write) -> std::io::Result<()>;

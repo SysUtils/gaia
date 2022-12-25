@@ -50,7 +50,7 @@ pub enum Command {
     SetTouchpadSettingLeft = 0x4E,
     SetTouchpadSettingRight = 0x4F,
     SetFindDevice = 0x50,
-    SetToggleTouchPad = 0x51,
+    SetTouchpadLockState = 0x51,
 
     SetAncAutoAmbientMode = 0x53,
     SetAncControlMode = 0x54,

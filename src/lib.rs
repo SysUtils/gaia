@@ -1,5 +1,3 @@
-#![allow(dead_code, clippy::get_first)]
-
 mod byte_utils;
 pub mod packet;
 pub mod sender;

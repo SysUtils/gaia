@@ -19,10 +19,10 @@ pub enum ErrorType {
 
 #[derive(Debug, Clone, Copy)]
 pub struct Error {
-    feature: u8,
-    command: u8,
+    pub feature: u8,
+    pub command: u8,
 
-    error: ErrorType,
+    pub error: ErrorType,
 }
 
 impl Error {

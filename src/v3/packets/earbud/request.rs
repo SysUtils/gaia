@@ -1,3 +1,5 @@
+use byteorder::WriteBytesExt;
+
 use crate::traits;
 
 use super::command::Command;
@@ -35,6 +37,11 @@ pub enum Request {
     GetAptxAdMode,
     GetA2DPBarge,
     GetRegionEq,
+
+    SetAncAmbientSoundMode([u8; 2]),
+    SetAmbientSoundParameter(u8),
+    SetTouchpadLockState(bool),
+    SetWhisperMode(bool),
 }
 
 impl Request {
@@ -63,6 +70,10 @@ impl Request {
             Request::GetAptxAdMode => Command::GetAptxAdMode,
             Request::GetA2DPBarge => Command::GetA2DPBarge,
             Request::GetRegionEq => Command::GetRegionEq,
+            Request::SetAncAmbientSoundMode(_) => Command::SetAncAmbientSoundMode,
+            Request::SetAmbientSoundParameter(_) => Command::SetAptxState,
+            Request::SetTouchpadLockState(_) => Command::SetTouchpadLockState,
+            Request::SetWhisperMode(_) => Command::SetWhisperMode,
         }
     }
 }
@@ -72,7 +83,22 @@ impl traits::Payload for Request {
         todo!()
     }
 
-    fn write(&self, _buf: impl std::io::Write) -> std::io::Result<()> {
+    fn write(&self, mut buf: impl std::io::Write) -> std::io::Result<()> {
+        match self {
+            Request::SetAncAmbientSoundMode(data) => {
+                buf.write_all(&data[..])?;
+            }
+            Request::SetAmbientSoundParameter(data) => {
+                buf.write_u8(*data)?;
+            }
+            Request::SetTouchpadLockState(data) => {
+                buf.write_u8(*data as _)?;
+            }
+            Request::SetWhisperMode(data) => {
+                buf.write_u8((*data as u8) * 2)?;
+            }
+            _ => {}
+        }
         Ok(())
     }
 }

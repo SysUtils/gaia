@@ -44,7 +44,7 @@ impl<T: Transport + 'static> Sender<T> {
                         let tx = match tx {
                             Some(tx) => tx,
                             None => {
-                                tracing::error!("Received packet without request, skip");
+                                tracing::error!("Received {packet:?} without request, skip");
                                 return;
                             }
                         };

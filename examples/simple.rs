@@ -66,7 +66,9 @@ async fn scan() -> Result<(), Box<dyn std::error::Error>> {
             dbg!(
                 sender
                     .send(Packet::V3(v3::packet::V3Packet::Request(
-                        v3::Request::Earbud(v3::earbud::Request::SetAncAmbientSoundMode([0, 0])),
+                        v3::Request::Earbud(v3::earbud::Request::SetAncAmbientSoundMode(vec![
+                            0, 0
+                        ])),
                     )))
                     .await
             );

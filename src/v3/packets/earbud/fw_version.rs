@@ -1,10 +1,16 @@
+use byteorder::ReadBytesExt;
+
+use crate::traits::Payload;
+
 #[derive(Debug, Clone)]
 pub struct FwVersion(u8, u8, u8);
 
-impl TryFrom<&[u8]> for FwVersion {
-    type Error = ();
+impl Payload for FwVersion {
+    fn read(mut data: impl std::io::Read) -> std::io::Result<Self> {
+        Ok(Self(data.read_u8()?, data.read_u8()?, data.read_u8()?))
+    }
 
-    fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
-        Ok(FwVersion(value[0], value[2], value[3]))
+    fn write(&self, mut buf: impl std::io::Write) -> std::io::Result<()> {
+        buf.write_all(&[self.0, self.1, self.2])
     }
 }

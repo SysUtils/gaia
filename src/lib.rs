@@ -1,7 +1,10 @@
+#![feature(array_try_from_fn)]
+
 mod byte_utils;
+mod traits;
+
 pub mod packet;
 pub mod sender;
-mod traits;
 pub mod transport;
 pub mod v2;
 pub mod v3;

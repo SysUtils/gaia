@@ -18,3 +18,5 @@ byteorder = { version = "1.4.3" }
 hex = "0.4.3"
 dashmap = { version = "5.1.0" }
 kiam = "0.1.1"
+serde = { version = "1.0.136", features = ["derive"] }
+thiserror = { version = "1.0.30" }

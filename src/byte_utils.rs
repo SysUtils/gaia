@@ -15,3 +15,22 @@ impl<T: std::io::Read> ReadTail for T {
         Ok(buf)
     }
 }
+
+pub trait ReadBool {
+    fn read_bool(self) -> std::io::Result<bool>;
+}
+
+impl<T: byteorder::ReadBytesExt> ReadBool for T {
+    fn read_bool(mut self) -> std::io::Result<bool> {
+        Ok(match self.read_u8()? {
+            0 => false,
+            1 => true,
+            _ => {
+                return Err(std::io::Error::new(
+                    std::io::ErrorKind::InvalidData,
+                    "Invalid bool representation",
+                ))
+            }
+        })
+    }
+}

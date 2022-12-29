@@ -1,3 +1,5 @@
+use crate::traits::Payload;
+
 #[derive(Debug, Clone, Copy)]
 pub struct DeviceStatus {
     pub charging: bool,
@@ -21,6 +23,11 @@ impl DeviceStatus {
             })
         }
     }
+
+    fn data(data: Option<Self>) -> [u8; 2] {
+        data.map(|d| [d.charging as _, d.battery])
+            .unwrap_or([0u8; 2])
+    }
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -30,8 +37,8 @@ pub struct ChargingStatus {
     pub cardle: Option<DeviceStatus>,
 }
 
-impl ChargingStatus {
-    pub fn read(mut data: impl std::io::Read) -> std::io::Result<Self> {
+impl Payload for ChargingStatus {
+    fn read(mut data: impl std::io::Read) -> std::io::Result<Self> {
         let buf = &mut [0u8; 6];
         data.read_exact(&mut buf[..])?;
 
@@ -40,5 +47,12 @@ impl ChargingStatus {
             right: DeviceStatus::from(&buf[2..4]),
             cardle: DeviceStatus::from(&buf[4..]),
         })
+    }
+
+    fn write(&self, mut buf: impl std::io::Write) -> std::io::Result<()> {
+        buf.write_all(&DeviceStatus::data(self.left))?;
+        buf.write_all(&DeviceStatus::data(self.right))?;
+        buf.write_all(&DeviceStatus::data(self.cardle))?;
+        Ok(())
     }
 }

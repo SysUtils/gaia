@@ -5,7 +5,7 @@ pub enum Request {}
 
 impl Request {
     pub fn command(&self) -> u8 {
-        0
+        unreachable!()
     }
 }
 

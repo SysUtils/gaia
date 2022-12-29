@@ -1,5 +1,7 @@
 use num_enum::TryFromPrimitive;
 
+use crate::traits::Payload;
+
 use super::{anc::AncStatus, charging_status::ChargingStatus, peer_state::PeerState};
 
 #[derive(Debug, Clone, Copy, TryFromPrimitive)]
